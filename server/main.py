@@ -18,6 +18,7 @@ os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
 def db():
     con = sqlite3.connect(DB_PATH)
     con.row_factory = sqlite3.Row
+    con.execute("PRAGMA journal_mode=WAL")  # evita 'database is locked' con varios dispositivos
     try:
         con.execute("""CREATE TABLE IF NOT EXISTS items(
             id TEXT PRIMARY KEY, amount REAL, type TEXT, cat TEXT, note TEXT,
