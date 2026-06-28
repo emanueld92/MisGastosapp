@@ -1,0 +1,5 @@
+server/venv/
+*.pyc
+__pycache__/
+*.db
+.DS_Store

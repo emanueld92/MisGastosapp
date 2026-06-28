@@ -1,0 +1,38 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [main]
+
+# ponytail: PWA estatica + FastAPI chico, no hay build. Solo sincroniza
+# codigo y reinicia el servicio. La infra (nginx/TLS/venv/token) se hace
+# una vez en el bootstrap; ver README.
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Copy app to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: root
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: "web/,server/"
+          target: "/opt/gastos/"
+
+      - name: Restart backend
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: root
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            set -euo pipefail
+            cd /opt/gastos/server
+            [ -d venv ] || python3 -m venv venv
+            ./venv/bin/pip install -q -r requirements.txt
+            systemctl restart gastos
+            sleep 1
+            curl -fs localhost:8010/api/health
